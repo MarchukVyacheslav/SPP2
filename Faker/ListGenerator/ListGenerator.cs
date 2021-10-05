@@ -1,18 +1,18 @@
 ﻿using System;
 using FakerLibrary;
 
-namespace IntGenerator
+namespace ListGenerator
 {
-    class IntGenerator : IGenerator
+    class ListGenerator : IGenerator
     {
         public bool CanGenerate(Type type)
         {
-            return type == typeof(int);
+            throw new NotImplementedException();
         }
 
         public object Generate(GeneratorContext context)
         {
-            return context.Random.Next(1, 100);
+            throw new NotImplementedException();
         }
     }
 }
