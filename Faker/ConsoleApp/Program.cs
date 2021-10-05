@@ -10,7 +10,7 @@ namespace ConsoleApp
         static void Main(string[] args)
         {
             Faker faker = new Faker();
-            abc obj = faker.Create<abc>();
+            Person obj = faker.Create<Person>();
         }
 
         public struct StructExample
@@ -68,17 +68,33 @@ namespace ConsoleApp
             public AssosiationExample AnotherDTOItem;
         }
 
-        public class abc
+        public class Person
         {
-            public bool flag;
-            public abc()
+            public bool _flag;
+            public string _name;
+            private int _age { get; }
+            public Person()
             {
-                flag = false;
+                _flag = false;
             }
 
-            private abc(bool b)
+            private Person(bool flag)
             {
-                flag = b;
+                _flag = flag;
+            }
+
+            private Person(string name, bool flag)
+            {
+                _name = name;
+                _flag = flag;
+            }
+
+            public Person(string name, int age, bool flag)
+            {
+                _name = name;
+                _flag = flag;
+                _age = age;
+                throw new Exception();
             }
         }
     }
