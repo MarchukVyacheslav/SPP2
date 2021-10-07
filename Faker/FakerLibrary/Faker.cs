@@ -5,46 +5,65 @@ using System.Linq;
 
 namespace FakerLibrary
 {
-    public class Faker
+    public interface IFaker
     {
-        private Stack<Type> dodgestack = new Stack<Type>();
-        private List<IGenerator> generators = new PluginLoader().RefreshPlugins();
-        private GeneratorContext context = new GeneratorContext(new Random(3228), null, null);
+        T Create<T>();
+    }
+
+    public class Faker : IFaker
+    {
+        private Stack<Type> dodgestack;
+        private List<IGenerator> generators;
+        private Random random;
+        public Faker()
+        {
+            dodgestack = new Stack<Type>();
+            generators = new PluginLoader().RefreshPlugins();
+            generators.Add(new ListGenerator());
+            random = new Random(3228);
+        }
 
         public T Create<T>()
         {
-            return (T)Create(typeof(T));
+            return (T)GenerateValue(new GeneratorContext(random, typeof(T), this));
         }
 
         private object Create(Type t)
         {
-            var ctors = t.GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic).OrderByDescending(ctor => ctor.GetParameters().Length).ToList();
             object obj = null;
-            dodgestack.Push(t);
-            foreach (var ctor in ctors)
+            var ctors = t.GetConstructors(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic).OrderByDescending(ctor => ctor.GetParameters().Length).ToList();
+            if (ctors.Count != 0 && obj == null)
             {
-                var ctorParams = ctor.GetParameters();
-                List<object> ctorValues = new List<object>();
-                foreach (var ctorparam in ctorParams)
+                foreach (var ctor in ctors)
                 {
-                    ctorValues.Add(GenerateValue(ctorparam.ParameterType, context));
-                }
-                try
-                {
-                    obj = ctor.Invoke(ctorValues.ToArray());
-                    break;
-                }
-                catch
-                {
-                    continue;
+                    var ctorParams = ctor.GetParameters();
+                    List<object> ctorValues = new List<object>();
+                    foreach (var ctorparam in ctorParams)
+                    {
+                        ctorValues.Add(GenerateValue(new GeneratorContext(random, ctorparam.ParameterType, this)));
+                    }
+                    try
+                    {
+                        obj = ctor.Invoke(ctorValues.ToArray());
+                        break;
+                    }
+                    catch
+                    {
+                        continue;
+                    }
                 }
             }
+            else
+            {
+                obj = Activator.CreateInstance(t);
+            }
+
             var fields = t.GetFields();
             foreach (var field in fields)
             {
                 if (Equals(field.GetValue(obj), GetDefaultValue(field.FieldType)))
                 {
-                    field.SetValue(obj, GenerateValue(field.FieldType, context));
+                    field.SetValue(obj, GenerateValue(new GeneratorContext(random, field.FieldType, this)));
                 }
             }
             var properties = t.GetProperties();
@@ -52,27 +71,28 @@ namespace FakerLibrary
             {
                 if (Equals(property.GetValue(obj), GetDefaultValue(property.PropertyType)))
                 {
-                    property.SetValue(obj, GenerateValue(property.PropertyType, context));
+                    property.SetValue(obj, GenerateValue(new GeneratorContext(random, property.PropertyType, this)));
                 }
             }
-            dodgestack.Pop();
             return obj;
         }
 
-        private object GenerateValue(Type t, GeneratorContext context)
+        internal object GenerateValue(GeneratorContext context)
         {
             object value = null;
             foreach (IGenerator generator in generators)
             {
-                if (generator.CanGenerate(t))
+                if (generator.CanGenerate(context.TargetType))
                 {
                     value = generator.Generate(context);
                     break;
                 }
             }
-            if (value == null & !dodgestack.Contains(t))
+            if (value == null && !dodgestack.Contains(context.TargetType))
             {
-                value = Create(t);
+                dodgestack.Push(context.TargetType);
+                value = Create(context.TargetType);
+                dodgestack.Pop();
             }
             return value;
         }

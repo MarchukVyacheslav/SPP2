@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Linq;
-using FakerLibrary;
 
-namespace ListGenerator
+namespace FakerLibrary
 {
     class ListGenerator : IGenerator
     {
@@ -20,7 +19,14 @@ namespace ListGenerator
             GeneratorContext newcontext = new GeneratorContext(context.Random, itemtype, context.Faker);
             for (int i = 0; i < listlength; i++)
             {
-                //list.Add(context.Faker.GenerateValue(newcontext));
+                try
+                {
+                    list.Add(context.Faker.GenerateValue(newcontext));
+                }
+                catch
+                {
+                    break;
+                }
             }
             return list;
         }

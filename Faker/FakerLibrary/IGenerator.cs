@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FakerLibrary
 {
@@ -11,6 +7,7 @@ namespace FakerLibrary
         object Generate(GeneratorContext context);
         bool CanGenerate(Type type);
     }
+
     public class GeneratorContext
     {
         public Random Random { get; }
